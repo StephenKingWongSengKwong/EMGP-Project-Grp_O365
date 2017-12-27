@@ -1,0 +1,95 @@
+#include <xc.h>
+#define _XTAL_FREQ 8000000
+
+
+
+#include <pic18f87j11.h>
+float adcf = 0.0;
+float adcl = 0.0;
+float adcr = 0.0;
+
+void configureADC (void);
+void adcfront(void);
+void adcright(void);
+void adcleft(void);
+void main()
+{
+    
+    PORTD=0x00;
+    TRISD=0x00;
+    configureADC();
+    
+    while(1) {              
+    __delay_ms(20);
+    adcfront();
+    adcleft();
+    adcright();
+    if (adcf > 2.0){
+    LATDbits.LATD1=1;
+    } else {
+    LATDbits.LATD1=0;
+    }
+    if (adcl > 2.0){
+    LATDbits.LATD2=1;
+    } else {
+    LATDbits.LATD2=0;
+    }
+    if (adcr > 2.0){
+    LATDbits.LATD3=1;
+    } else {
+    LATDbits.LATD3=0;
+    }
+    }
+}
+
+
+void configureADC (void){
+    //*************************configure port A for ADC
+    TRISH=0xFF;  //port A as input
+    ADCON0bits.VCFG1 =0;  // use internal voltage VSS and VDD as reference
+    ADCON0bits.VCFG0 =0;
+    ADCON0bits.ADON =1; //turn on ADC
+    ADCON1bits.ADFM=1;  //right justification of result
+    ADCON1bits.ACQT0=0; //set AD acquisition time of 16TAD
+    ADCON1bits.ACQT1=1;
+    ADCON1bits.ACQT2=1;
+    ADCON1bits.ADCS0=1; //select AD clock, FOSC/4  // this is needed for PIC18F87J11
+    ADCON1bits.ADCS1=0;
+    ADCON1bits.ADCS2=0;
+ }
+
+void adcfront(){
+    ADCON0bits.CHS3=1;
+    ADCON0bits.CHS2=1;
+    ADCON0bits.CHS1=1;
+    ADCON0bits.CHS0=0;  //select channel AN14/RH6
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcf=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcf = adcf*0.00488;
+}
+
+void adcleft(){
+    ADCON0bits.CHS3=1;
+    ADCON0bits.CHS2=1;
+    ADCON0bits.CHS1=0;
+    ADCON0bits.CHS0=1;  //select channel AN13/RH5
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcl=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcl = adcl*0.00488;
+}
+
+void adcright(){
+    ADCON0bits.CHS3=1;
+    ADCON0bits.CHS2=1;
+    ADCON0bits.CHS1=0;
+    ADCON0bits.CHS0=0;  //select channel AN12/RH4
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcr=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcr = adcr*0.00488;
+   }

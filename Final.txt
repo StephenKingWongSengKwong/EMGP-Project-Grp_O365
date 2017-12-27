@@ -1,0 +1,205 @@
+#include <xc.h>
+#define _XTAL_FREQ 8000000
+
+
+
+#include <pic18f87j11.h>
+float adcf = 0.0;
+float adcl = 0.0;
+float adcr = 0.0;
+int counter;
+
+Void segment(void);
+Void turnleft(void);
+Void turnright(void);
+Void forward(void);
+Void backward(void);
+Void delay(void);
+void configureADC (void);
+void adcfront(void);
+void adcright(void);
+void adcleft(void);
+void main()
+{
+    TRISH=0x0F; //PORTH pin0-3 output pin 4-7 input
+    PORTH=0x00;
+    PORTD=0x00;
+    TRISD=0x00;
+    PORTB=0x01; //only Pin B0 is configure as digital input
+    TRISB=0x01;
+    configureADC();
+    
+    while(1) {              
+    adcfront();
+    adcleft();
+    adcright();
+
+    if(PORTBbits.RB0 == 1) {            
+    LATBbits.LATB1=1;
+    } else 
+    {
+    LATBbits.LATB1=0;
+    }
+    
+    if (adcf > 2.0){
+    LATHbits.LATH0=1;
+    } else {
+    LATHbits.LATH0=0;
+    }
+    if (adcl > 2.0){
+    LATHbits.LATH1=1;
+    } else {
+    LATHbits.LATH1=0;
+    }
+    if (adcr > 2.0){
+    LATHbits.LATH0=1;
+    } else {
+    LATHbits.LATH0=0;
+    }
+    }
+}
+
+
+void configureADC (void){
+    //*************************configure port A for ADC
+    TRISH=0x0F;  //port H as input
+    ADCON0bits.VCFG1 =0;  // use internal voltage VSS and VDD as reference
+    ADCON0bits.VCFG0 =0;
+    ADCON0bits.ADON =1; //turn on ADC
+    ADCON1bits.ADFM=1;  //right justification of result
+    ADCON1bits.ACQT0=0; //set AD acquisition time of 16TAD
+    ADCON1bits.ACQT1=1;
+    ADCON1bits.ACQT2=1;
+    ADCON1bits.ADCS0=1; //select AD clock, FOSC/4  // this is needed for PIC18F87J11
+    ADCON1bits.ADCS1=0;
+    ADCON1bits.ADCS2=0;
+ }
+
+void adcfront(){
+    ADCON0bits.CHS3=1;  //select channel AN14/RH6
+    ADCON0bits.CHS2=1;  //select channel AN14/RH6
+    ADCON0bits.CHS1=1;  //select channel AN14/RH6
+    ADCON0bits.CHS0=0;  //select channel AN14/RH6
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcf=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcf = adcf*0.00488;
+}
+
+void adcleft(){
+    ADCON0bits.CHS3=1;  //select channel AN13/RH5
+    ADCON0bits.CHS2=1;  //select channel AN13/RH5
+    ADCON0bits.CHS1=0;  //select channel AN13/RH5
+    ADCON0bits.CHS0=1;  //select channel AN13/RH5
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcl=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcl = adcl*0.00488;
+}
+
+void adcright(){
+    ADCON0bits.CHS3=1;  //select channel AN12/RH4
+    ADCON0bits.CHS2=1;  //select channel AN12/RH4
+    ADCON0bits.CHS1=0;  //select channel AN12/RH4
+    ADCON0bits.CHS0=0;  //select channel AN12/RH4
+    ADCON0bits.GO_DONE = 1; // Start Conversion               
+    while (ADCON0bits.GO_DONE == 1){ // wait
+    }                               
+    adcr=ADRESH*256+ADRESL; //ADRESL = lower bits   //ADRESH = higher bits
+    adcr = adcr*0.00488;
+   }
+
+Void delay()
+    {
+     __delay_ms(5);
+    }
+
+Void backward()
+    {
+    LATA = 0b10011001;
+    delay(); 
+    LATA = 0b00111100;
+    delay();
+    LATA = 0b01100110;
+    delay();
+    LATA = 0b11000011;
+    delay();
+    }
+Void forward()
+    {
+    LATA = 0b11000011;
+    delay(); 
+    LATA = 0b01100110;
+    delay();
+    LATA = 0b00111100;
+    delay();
+    LATA = 0b10011001;
+    delay();
+    }
+Void turnleft()
+    {
+    LATA = 0b11000000;
+    delay(); 
+    LATA = 0b01100000;
+    delay();
+    LATA = 0b00110000;
+    delay();
+    LATA = 0b10010000;
+    delay();
+    }
+Void turnright()
+    {
+    LATA = 0b00000011;
+    delay(); 
+    LATA = 0b00000110;
+    delay();
+    LATA = 0b00001100;
+    delay();
+    LATA = 0b00001001;
+    delay();
+    }
+
+
+Void Segment(){
+if (counter == 0){
+LATC=0b00111111;
+}
+ 
+if (counter == 1){
+LATC=0b00000110;
+}
+ 
+if (counter == 2){
+LATC=0b01011011;
+}
+ 
+if (counter == 3){
+LATC=0b01001111;
+}
+ 
+if (counter == 4){
+LATC=0b01100110;
+}
+ 
+if (counter == 5){
+LATC=0b01101101;
+}
+ 
+if (counter == 6){
+LATC=0b01111101;
+}
+ 
+if (counter == 7){
+LATC=0b00000111;
+}
+ 
+if (counter == 8){
+LATC=0b01111111;
+}
+ 
+if (counter == 9){
+LATC=0b01101111;
+}
+}
